@@ -1,10 +1,22 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext('2d');
 
-const sideBar = document.getElementById("monsters-side-bar");
+const characters = document.getElementById("characteres");
+
+let target = null
+const monstersSideBar = document.getElementById("monsters");
+monstersSideBar.addEventListener('change', (e) => {
+  if (e.target && e.target.name === 'monster') {
+    target = e.target.value;
+    drawMonsters()
+  }
+});
+
+
+const chat = document.getElementById("log");
+const statusXP = document.getElementById("xp");
 
 const playerBaseImage = new Image();
-// playerBaseImage.src = 'player_base.png';
 playerBaseImage.src = 'Sprite-0001.png';
 
 let playerBaseLoaded = false;
@@ -15,6 +27,7 @@ playerBaseImage.onload = () => {
 const socket = io();
 let players = {};
 let monsters = [];
+let myId;
 
 const EMPTY_TILE = 0;
 const WALL_TILE = 1;
@@ -66,7 +79,7 @@ function drawMap() {
 
 function drawMonsters() {
   for (const monster of monsters) {
-    ctx.fillStyle = 'purple';
+    ctx.fillStyle = monster.id === target ? 'red' : 'purple';
     ctx.fillRect(monster.x * tileSize, monster.y * tileSize, tileSize, tileSize);
 
     // Draw hp bar
@@ -122,6 +135,7 @@ function draw() {
   drawMap();
   drawMonsters();
   drawPlayers();
+  drawSideBar();
 }
 
 function hasMonsterUiChanges(newMonsters) {
@@ -130,8 +144,31 @@ function hasMonsterUiChanges(newMonsters) {
   return hasChanges;
 }
 
-function drawMonsterSideBar (oldMonsters) {
-  if (hasMonsterUiChanges(oldMonsters)) console.log('Should re-draw monster bar');
+function drawCharacteres() {
+  monstersSideBar.replaceChildren();
+  monsters.forEach(monster => {
+    const monsterDiv = document.createElement('div');
+
+    const monsterRadio = document.createElement('input');
+    monsterRadio.type = 'radio';
+    monsterRadio.name = 'monster';                 // group name for radios
+    monsterRadio.id = `monster-${monster.id}`;     // unique id
+    monsterRadio.value = monster.id;
+    monsterRadio.checked = monster.id === target;
+
+    const monsterLabel = document.createElement('label');
+    monsterLabel.htmlFor = monsterRadio.id;
+    monsterLabel.textContent = monster.type;      // safe: no HTML parsing
+
+    monsterDiv.appendChild(monsterRadio);
+    monsterDiv.appendChild(monsterLabel);
+
+    monstersSideBar.appendChild(monsterDiv);
+  });
+}
+
+function drawSideBar() {
+  drawCharacteres();
 }
 
 socket.on('state', (serverState) => {
@@ -140,14 +177,24 @@ socket.on('state', (serverState) => {
   monsters = serverState.monsters || [];
 
   draw();
-  drawMonsterSideBar(oldMonsters);
+});
+
+socket.on('connect', () => {
+  myId = socket.id;
+});
+
+socket.on('message', (message) => {
+  const p = document.createElement('p');
+  p.textContent = message;
+  chat.appendChild(p);
+  chat.scrollTop = chat.scrollHeight;
 });
 
 document.addEventListener('keydown', (e) => {
   let key = e.key.toLowerCase();
 
-  if (e.key === ' ') {
-    socket.emit('attack'); // player pressed space to attack
+  if (e.key === ' ' && target) {
+    socket.emit('attack', { targetId: target }); // player pressed space to attack
     return;
   }
 

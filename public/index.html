@@ -7,16 +7,27 @@
     </style>
   </head>
   <body>
-    <div style="display: flex;">
-      <canvas id="game" width="640" height="640"></canvas>
-      <div id="monsters-side-bar"></div>
-      <div id="playerStatus" style="margin-left: 32px;">
-        <div id="level">12</div>
-        <div id="xp"></div>
-        <div id="maxHp"></div>
-        <div id="hp"></div>
-        <div id="attack"></div>
-        <div id="defense"></div>
+    <div>
+      <div id="screen">
+        <canvas id="game" width="640" height="640"></canvas>
+        <!-- <div id="sideBar">
+          <div id="playerStatus" style="margin-left: 32px;">
+            <div id="level">12</div>
+            <div id="xp"></div>
+            <div id="maxHp"></div>
+            <div id="hp"></div>
+            <div id="attack"></div>
+            <div id="defense"></div>
+          </div>
+          <div id="monsters"></div>
+        </div> -->
+        <div id="characteres"></div>
+        <div>
+          <fieldset>
+            <legend>Monsters:</legend>
+            <div id="monsters"></div>
+          </fieldset>
+        </div>
       </div>
     </div>
     <div id="log" style="margin-top: 10px; height: 100px; overflow-y: auto; font-family: monospace; background: #222; color: #0f0; padding: 5px;"></div>

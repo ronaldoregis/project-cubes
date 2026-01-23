@@ -11,7 +11,7 @@ app.use(express.static('public'));
 function getRandomColor() {
   return '#' + Math.floor(Math.random()*16777215).toString(16);
 }
-
+// 20x20
 const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
   [1, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -35,11 +35,33 @@ const map = [
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
+function getRandomSpawnableSquareInTheMap() {
+  //since the map is a square, the length of any row or column will be the same
+  const mapXLength = map.length;
+  // need to subtract 2 since all the borders are non-spawnables (row most left and most right are non-spawnables)
+  const posSalt = mapXLength - 2;
+  let isSpawnableSquare = false;
+  let newX, newY;
+  // re run random until the pair x, y lands on a 0 square
+  while (!isSpawnableSquare) {
+    // also need to add 1. In a map 20x20 a random * 20 will spaw on 0 to 20. -2, makes it 0 to 18, +1 makes it 1 to 19
+    newX = Math.floor(Math.random() * posSalt + 1);
+    newY = Math.floor(Math.random() * posSalt + 1);
+    if (map[newX][newY] == 0) isSpawnableSquare = true;
+  }
+  
+  return { x: newX, y: newY}
+}
+
 const players = {};
 
+const monsterTypes = Object.freeze({
+  evilSquare: "Evil Square",
+});
+
 let monsters = [
-  { id: 'm1', x: 4, y:2, hp: 20 },
-  { id: 'm2', x: 6, y:2, hp: 20 }
+  { id: 'm1', x: 4, y:2, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm2', x: 6, y:2, hp: 20, xp: 1, type: monsterTypes.evilSquare }
 ]
 
 const MONSTER_DAMAGE = 1;
@@ -76,7 +98,7 @@ function canMove(player, direction) {
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
 
-  players[socket.id] = {x:1, y:1, color: getRandomColor(), lastMove: 0, lastAttack: 0, hp: 20, maxHp: 20, isDead: false};
+  players[socket.id] = {x:1, y:1, color: getRandomColor(), lastMove: 0, lastAttack: 0, hp: 20, maxHp: 20, isDead: false, xp: 0};
   io.emit('state', { players, monsters });
 
   socket.on('disconnect', () => {
@@ -105,7 +127,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('attack', () => {
+  socket.on('attack', ({ targetId }) => {
     const player = players[socket.id];
     if (!player || player.isDead) return;
 
@@ -115,24 +137,31 @@ io.on('connection', (socket) => {
       player.lastAttack = currentTime;
       console.log('atacou fora do cooldown')
 
-      for (const monster of monsters) {
+      const monster = monsters.find(monster => monster.id === targetId);
+      console.log(`Tentou atacar o monstro ${targetId}`)
+      if (monster) {
         const dx = Math.abs(monster.x - player.x);
         const dy = Math.abs(monster.y - player.y);
         if ((dx === 1 && dy === 0) || (dy === 1 && dx === 0)) {
+          console.log('Target dentro do range de ataque');
           monster.hp -= 5;
           console.log(`Monster ${monster.id} hit! HP: ${monster.hp}`);
+          socket.emit('message', `${monster.type} hit! HP: ${monster.hp}`);
 
           if (monster.hp <= 0) {
             console.log(`Monster ${monster.id} defeated`);
+            socket.emit('message', `${monster.type} defeated`);
+            player.xp += monster.xp;
             setTimeout(() => {
-              const newMonsterX = Math.floor(Math.random() * 18 + 1);
-              const newMonsterY = Math.floor(Math.random() * 18 + 1);
+              const spawnablePos = getRandomSpawnableSquareInTheMap()
               const newMonsterId = Math.floor(Math.random()*16777215).toString(16);
-              const newMonster = { id: newMonsterId, x: newMonsterX, y: newMonsterY, hp: 20 };
+              const newMonster = { id: newMonsterId, x: spawnablePos.x, y: spawnablePos.y, hp: 20, type: monsterTypes.evilSquare };
               monsters.push(newMonster);
               io.emit('state', { players, monsters });
             }, 5000);
           }
+        } else {
+          console.log('Target fora de alcance')
         }
       }
 

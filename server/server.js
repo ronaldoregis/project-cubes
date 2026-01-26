@@ -61,11 +61,17 @@ const monsterTypes = Object.freeze({
 
 let monsters = [
   { id: 'm1', x: 4, y:2, hp: 20, xp: 1, type: monsterTypes.evilSquare },
-  { id: 'm2', x: 6, y:2, hp: 20, xp: 1, type: monsterTypes.evilSquare }
+  { id: 'm2', x: 6, y:2, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm3', x: 4, y:3, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm4', x: 4, y:4, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm5', x: 4, y:5, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm6', x: 6, y:3, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm7', x: 6, y:4, hp: 20, xp: 1, type: monsterTypes.evilSquare },
+  { id: 'm8', x: 6, y:5, hp: 20, xp: 1, type: monsterTypes.evilSquare },
 ]
 
 const MONSTER_DAMAGE = 1;
-const TICK_MS = 1000;
+const TICK_MS = 500;
 
 function canMove(player, direction) {
   let newX = player.x;
@@ -221,14 +227,14 @@ setInterval(() => {
     }
     // loop for monsters to walk around (random)
     // stay in the same place                                             // 0
-    let canMoveUp = m.y === 0 ? false : map[m.x][m.y-1] === 0;            // 1
-    let canMoveDown = m.y === map.length ? false : map[m.x][m.y+1] === 0; // 2
-    let canMoveRight = m.x === map.length ? false : map[m.x+1][m.y] === 0;// 3
-    let canMoveLeft = m.x === 0 ? false : map[m.x-1][m.y] === 0;          // 4
+    let canMoveUp = m.y === 0 ? false : map[m.y-1][m.x] === 0;            // 1
+    let canMoveDown = m.y === map.length ? false : map[m.y+1][m.x] === 0; // 2
+    let canMoveRight = m.x === map.length ? false : map[m.y][m.x+1] === 0;// 3
+    let canMoveLeft = m.x === 0 ? false : map[m.y][m.x-1] === 0;          // 4
     let chooseMovement = false
     let movementDirection
     do {
-      movementDirection = Math.floor(Math.random() * 4);
+      movementDirection = Math.floor(Math.random() * 5);
       switch (movementDirection) {
         case 0:
           chooseMovement = true

@@ -196,9 +196,10 @@ function handlePlayerDeath(playerId) {
 }
 
 setInterval(() => {
-  let changed = false;
+  // let changed = false;
 
   for (const m of monsters) {
+    // loop for monsters to attack adjacent players TODO: make is chase the player
     for (const id in players) {
       const p = players[id];
       if (p.isDead) continue;
@@ -209,7 +210,7 @@ setInterval(() => {
       if (adjacent) {
         const dmg = Math.max(1, MONSTER_DAMAGE - (p.defense || 0));
         p.hp -= dmg;
-        changed = true;
+        // changed = true;
 
         if (p.hp <= 0) {
           handlePlayerDeath(id);
@@ -218,11 +219,62 @@ setInterval(() => {
         // break;
       }
     }
+    // loop for monsters to walk around (random)
+    // stay in the same place                                             // 0
+    let canMoveUp = m.y === 0 ? false : map[m.x][m.y-1] === 0;            // 1
+    let canMoveDown = m.y === map.length ? false : map[m.x][m.y+1] === 0; // 2
+    let canMoveRight = m.x === map.length ? false : map[m.x+1][m.y] === 0;// 3
+    let canMoveLeft = m.x === 0 ? false : map[m.x-1][m.y] === 0;          // 4
+    let chooseMovement = false
+    let movementDirection
+    do {
+      movementDirection = Math.floor(Math.random() * 4);
+      switch (movementDirection) {
+        case 0:
+          chooseMovement = true
+          break;
+        case 1:
+          if (canMoveUp) {
+            chooseMovement = true
+            // changed = true
+            m.y = m.y -1;
+          }
+          break;
+
+        case 2:
+          if (canMoveDown) {
+            chooseMovement = true
+            // changed = true
+            m.y = m.y +1;
+          }
+          break;
+
+        case 3:
+          if (canMoveRight) {
+            chooseMovement = true
+            // changed = true
+            m.x = m.x +1;
+          }
+          break;
+
+        case 4:
+          if (canMoveLeft) {
+            chooseMovement = true
+            // changed = true
+            m.x = m.x -1;
+          }
+          break;
+      
+        default:
+          break;
+      }
+    } while (!movementDirection)
   }
 
-  if (changed) {
-    io.emit('state', { players, monsters });
-  }
+  // if (changed) {
+  //   io.emit('state', { players, monsters });
+  // }
+  io.emit('state', { players, monsters });
 }, TICK_MS);
 
 const PORT = 3000;

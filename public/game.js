@@ -1,6 +1,9 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext('2d');
 
+const barCanvas = document.getElementById("cdBar")
+const barCtx = barCanvas.getContext('2d');
+
 const characters = document.getElementById("characteres");
 
 let target = null
@@ -56,6 +59,9 @@ const map = [
   [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
   [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ];
+
+const AUTO_ATTACK_CD = 500;
+let lastAutoAttack = 0;
 
 function getTile(mapValue) {
   switch (mapValue) {
@@ -194,13 +200,52 @@ document.addEventListener('keydown', (event) => {
   event.stopImmediatePropagation();
   let key = event.key.toLowerCase();
 
-  if (key === 'k' && target) {
-    socket.emit('attack', { targetId: target }); // player pressed space to attack
-    return;
-  }
-
   if (key === 'w') socket.emit('move', 'up');
   if (key === 's') socket.emit('move', 'down');
   if (key === 'a') socket.emit('move', 'left');
   if (key === 'd') socket.emit('move', 'right');
 });
+
+
+function drawCD() {
+
+  const currentTime = Date.now();
+  let remaningCD = currentTime - lastAutoAttack
+  const cdRatio = Math.max(0, (remaningCD || 0)) / (AUTO_ATTACK_CD || 1);
+  barCtx.fillStyle = 'red';
+  barCtx.globalAlpha = 0.5;
+  barCtx.fillRect(0, 0, cdRatio * 640, tileSize);
+}
+
+function drawActionIcons() {
+  barCtx.fillStyle = 'blue';
+  barCtx.globalAlpha = 1;
+  barCtx.fillRect(0, 0, 640, tileSize);
+  
+  barCtx.fillStyle = 'white';
+  barCtx.font = '20px monospace';
+  barCtx.fillText('Auto Attack', 5, 17);
+}
+
+function isTargetValid() {
+  return target && monsters.find(monster => monster.id === target);
+}
+
+drawActionIcons();
+
+
+setInterval(() => {
+  drawActionIcons();
+  if (!isTargetValid()) {
+    target = null;
+  } else {
+    const currentTime = Date.now();
+
+    if (currentTime - lastAutoAttack > AUTO_ATTACK_CD) {
+      socket.emit('attack', { targetId: target });
+      lastAutoAttack = currentTime;
+    }
+    
+    drawCD();
+  }
+}, 100)

@@ -190,10 +190,11 @@ socket.on('message', (message) => {
   chat.scrollTop = chat.scrollHeight;
 });
 
-document.addEventListener('keydown', (e) => {
-  let key = e.key.toLowerCase();
+document.addEventListener('keydown', (event) => {
+  event.stopImmediatePropagation();
+  let key = event.key.toLowerCase();
 
-  if (e.key === ' ' && target) {
+  if (key === 'k' && target) {
     socket.emit('attack', { targetId: target }); // player pressed space to attack
     return;
   }

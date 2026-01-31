@@ -274,7 +274,7 @@ setInterval(() => {
         default:
           break;
       }
-    } while (!movementDirection)
+    } while (!chooseMovement)
   }
 
   // if (changed) {
